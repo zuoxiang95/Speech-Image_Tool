@@ -7,6 +7,8 @@ from pypinyin import Style, lazy_pinyin
   _INITIALS_NOT_STRICT = _INITIALS + ['y', 'w', 'ee','aa','oo','vv']
 """
 from pypinyin.style._utils import get_initials, get_finals
+from os import makedirs, listdir
+from os.path import isfile, join, isdir
 import argparse as ap
 
 TRANSLATE_DICT = {
@@ -60,10 +62,10 @@ def translate_pinyin(sentence):
     # 对转化的拼音的格式进行修改
     for pinyin in pinyin_list:
         # 判断当前拼音是否为标点符号
-        if pinyin in [u'，', u'。', u'？', u'！', u'、']:
+        if pinyin in [u'\uff0c', u'\u3002', u'\uff1f', u'\uff01', u'\u3001']:
             result.append(pinyin)
             continue
-        '''对拼音进行标准化，更换声母和部分韵母的表达方式，以及对一些轻音的添加声调为第0声'''
+        '''对拼音进行标准化，更换声母和部分韵母的表达方式，以及对一些轻音的添加声调为第5声'''
         # 对没有声调的轻音，将其转化为第5声
         if pinyin[-1] not in ['1', '2', '3', '4']:
             pinyin = pinyin + '5'
@@ -103,4 +105,4 @@ if __name__ == '__main__':
             # 将汉字转化为拼音
             pinyin_tmp = translate_pinyin(text.strip())
             # 将转化后的拼音写入到文本文件中
-            f2.write(pinyin_tmp)
+            f2.write(pinyin_tmp.encode(encoding='gb2312'))

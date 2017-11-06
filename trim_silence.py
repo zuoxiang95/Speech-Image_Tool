@@ -3,6 +3,8 @@
 import librosa
 import numpy as np
 import argparse as ap
+from os.path import isfile, join, isdir
+from os import listdir, makedirs
 
 
 def trim_silence(audio_path, sample_rate, threshold, frame_length=2048):
@@ -45,5 +47,9 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
     audio_path = args["audio_path"]
     output_path = args["output_path"]
-    trim_silence_audio = trim_silence(audio_path, sample_rate=16000, threshold=40)
-    write_wav(trim_silence_audio, sample_rate=16000, filename=output_path)
+    if not isdir(output_path):
+        makedirs(output_path)
+    audio_list = [i for i in listdir(audio_path) if isfile(join(audio_path, i))]
+    for audio in audio_list:
+        trim_silence_audio = trim_silence(join(audio_path, audio), sample_rate=16000, threshold=0.05)
+        write_wav(trim_silence_audio, sample_rate=16000, filename=join(output_path, audio))
