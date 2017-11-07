@@ -43,4 +43,14 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
     mp3_dir = args["mp3_dir"]
     output_path = args["output_path"]
-    mp3_translate_wav(mp3_dir, output_path)
+    # 获取目录下的子目录名
+    only_dir = [i for i in listdir(mp3_dir) if isdir(join(mp3_dir, i))]
+    for data_dir in only_dir:
+        # 遍历每一个子目录，获取子目录下的所有MP3文件
+        only_file = [j for j in listdir(join(mp3_dir, data_dir))
+                     if (isfile(join(mp3_dir, data_dir, j))) & (j.split('.')[1] == 'mp3')]
+        for mp3_file in only_file:
+            mp3_path = join(mp3_dir, data_dir, mp3_file)
+            wav_name = str(data_dir) + '_' + mp3_file.split('.')[0] + '.wav'
+            wav_path = join(output_path, wav_name)
+            mp3_translate_wav(mp3_path, wav_path)

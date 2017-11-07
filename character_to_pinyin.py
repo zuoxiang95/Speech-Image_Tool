@@ -9,6 +9,7 @@ from pypinyin import Style, lazy_pinyin
 from pypinyin.style._utils import get_initials, get_finals
 from os import makedirs, listdir
 from os.path import isfile, join, isdir
+import re
 import argparse as ap
 
 TRANSLATE_DICT = {
@@ -56,8 +57,12 @@ def translate_pinyin(sentence):
     """
     # 对中文语句进行编码转化，转化为utf-8编码格式
     sentence = sentence.decode(encoding='utf-8')
+    # 正则匹配去除掉非中文以及我们所不需要的标点
+    regex = u".*?([\u2E80-\u9FFF，！。？、]+).*?"
+    m = re.findall(regex, sentence)
+    regex_txt = ''.join(m).encode(encoding='utf-8')
     # 对中文语句进行转化
-    pinyin_list = lazy_pinyin(sentence, style=Style.TONE3)
+    pinyin_list = lazy_pinyin(regex_txt, style=Style.TONE3)
     result = []
     # 对转化的拼音的格式进行修改
     for pinyin in pinyin_list:
@@ -86,23 +91,33 @@ def translate_pinyin(sentence):
 if __name__ == '__main__':
     parser = ap.ArgumentParser()
     parser.add_argument(
-        '--text_path',
+        '--text_dir',
         help="The chinese text path."
     )
     parser.add_argument(
-        '--output_path',
+        '--output_dir',
         help="The pinyin output path."
     )
     args = vars(parser.parse_args())
-    text_path = args["text_path"]
-    output_path = args["output_path"]
-    # 打开文本文档
-    with open(text_path, 'r') as f1:
-        tmp = f1.readlines()
+    text_dir = args["text_dir"]
+    output_dir = args["output_dir"]
+    # 获取文档目录下的所有子目录
+    only_dir = [i for i in listdir(text_dir) if isdir(join(text_dir, i))]
+    # 遍历所有文档子目录下的所有txt文件
+    for text_dir_name in only_dir:
+        only_file = [i for i in listdir(join(text_dir, text_dir_name))
+                     if (isfile(join(text_dir, text_dir_name, i))) & (i.split('.')[1] == 'txt')]
+        for text_file in only_file:
+            text_path = join(text_dir, text_dir_name, text_file)
+            # 打开文本文档
+            with open(text_path, 'r') as f1:
+                tmp = f1.readlines()
 
-    with open(output_path, 'w') as f2:
-        for text in tmp:
-            # 将汉字转化为拼音
-            pinyin_tmp = translate_pinyin(text.strip())
-            # 将转化后的拼音写入到文本文件中
-            f2.write(pinyin_tmp.encode(encoding='gb2312'))
+            output_path = join(output_dir, text_dir_name + '_' + text_file)
+
+            with open(output_path, 'w') as f2:
+                for text in tmp:
+                    # 将汉字转化为拼音
+                    pinyin_tmp = translate_pinyin(text.strip())
+                    # 将转化后的拼音写入到文本文件中
+                    f2.write(pinyin_tmp.encode(encoding='gb2312'))
