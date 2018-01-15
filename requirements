@@ -1,3 +1,6 @@
 librosa==0.5.1
 numpy==1.13.0
 pypinyin==0.27.0
+opencv-python==3.1.0
+Pillow==4.2.1
+numpy==1.13.1
