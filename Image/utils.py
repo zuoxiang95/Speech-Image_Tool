@@ -150,6 +150,82 @@ def draw_box(img, img_save, left_top, left_down, right_top, right_down):
     im.save(img_save)
 
 
+def get_color_box(img, height_im, width_im, move_pix=10):
+    """
+    给定一个box的长宽以及移动的像素值，从图片的左上角开始移动，
+    每次通过统计区域中像素颜色h的方差，找出图片h方差最小的区域也就是颜色相近的区域
+    :param img: 样本图片
+    :param height_im: 选取区域的长度
+    :param width_im: 选取区域的宽度
+    :param move_pix: 移动的像素值大小
+    :return: 返回图片颜色相近区域的起始位置，该区域颜色的反色rgb值
+    """
+    im = cv2.imread(img)
+    # 将rgb值转化为hsv值
+    hsv_im = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+    # rgb矩阵
+    rgb_array = np.array(im)
+    # hsv矩阵
+    hsv_array = np.array(hsv_im)
+    height, width, chanel = hsv_array.shape
+    # 计算box需要移动的次数
+    width_times = int((width - width_im) / move_pix + 1)
+    height_times = int((height - height_im) / move_pix + 1)
+    # 定义统计方差的list
+    var_result = np.ndarray([height_times, width_times], dtype=np.float32)
+    # 开始移动box
+    for i in range(height_times):
+        for j in range(width_times):
+            # 计算box的起始位置
+            begin_height = i * move_pix
+            end_height = begin_height + height_im + 1
+            begin_width = j * move_pix
+            end_width = begin_width + width_im + 1
+            # 获取到box对应的hsv数组
+            hsv_box = hsv_array[begin_height:end_height, begin_width:end_width, :]
+            # 计算box内的hsv中h的方差
+            box_color_count = statistic_color(hsv_box)
+            var_result[i, j] = box_color_count
+    # 找出方差最小的box所在的行和列
+    min_row, min_col = np.where(var_result == np.min(var_result))
+    # 随机从符合的位置中选取一个
+    rand_number = random.randint(0, len(min_row)-1)
+    # 计算box对应的起始位置
+    height_location_begin = min_row[rand_number] * move_pix
+    height_location_end = height_location_begin + height_im
+    width_location_begin = min_col[rand_number] * move_pix
+    width_location_end = width_location_begin + width_im
+    # 获取到box对应的rgb数组
+    rgb_box = rgb_array[height_location_begin:height_location_end, width_location_begin:width_location_end, :]
+    # 获取box的里的反色
+    diff_max_rgb = get_diff_color(rgb_box)
+    return [[height_location_begin, height_location_end], [width_location_begin, width_location_end]], diff_max_rgb
+
+
+def statistic_color(color_array):
+    """
+    主要是获取box内的hsv值中h的方差
+    :param color_array: box对应的矩阵
+    :return: 返回box的hsv值中h的方差
+    """
+    h_value = color_array[:, :, 0]
+    s_value = color_array[:, :, 1]
+    variance = np.var(h_value) + np.var(s_value)
+    return variance
+
+
+def get_diff_color(color_array):
+    """
+    主要是获取当前box的rgb值的均值，再求均值的反色
+    :param color_array: 当前box的rgb矩阵
+    :return: 当前box的反色的rgb值
+    """
+    r_mean = np.mean(color_array[:, :, 0])
+    g_mean = np.mean(color_array[:, :, 1])
+    b_mean = np.mean(color_array[:, :, 2])
+    return (int(255-r_mean), int(255-g_mean), int(255-b_mean))
+
+
 def save_image_use_cv2(image, path):
     cv2.imwrite(path, image)
 
